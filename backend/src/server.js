@@ -10,8 +10,13 @@ import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 dotenv.config();
 
 const app = express();
+import cors from "cors";
+
 app.use(cors({
-  origin: ["http://localhost:3000"],
+  origin: [
+    "http://localhost:3000",
+    "https://your-netlify-app.netlify.app"
+  ],
   credentials: true
 }));
 app.use(express.json());
