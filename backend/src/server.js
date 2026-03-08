@@ -9,14 +9,31 @@ import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 
 dotenv.config();
 
+if (!process.env.MONGO_URI) {
+  throw new Error("Missing MONGO_URI environment variable");
+}
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("Missing JWT_SECRET environment variable");
+}
+
 const app = express();
-import cors from "cors";
+const allowedOrigins = new Set([
+  "http://localhost:3000",
+  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map((url) => url.trim()) : [])
+].filter(Boolean));
 
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://your-netlify-app.netlify.app"
-  ],
+origin: (origin, callback) => {
+    // Allow server-to-server, Postman, and health checks without Origin header
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 app.use(express.json());

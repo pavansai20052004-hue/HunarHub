@@ -34,9 +34,8 @@ if (res.data.user.role === "admin") {
 } else if (res.data.user.role === "entrepreneur") {
   navigate("/entrepreneur");
 } else {
-  navigate("/");
+  navigate("/customer");
 }
-      navigate("/"); // go home
     } catch (error) {
       alert(error?.response?.data?.message || "Login failed");
       console.log(error);

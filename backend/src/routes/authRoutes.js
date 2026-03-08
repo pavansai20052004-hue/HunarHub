@@ -11,6 +11,8 @@ const signToken = (user) =>
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, role, location } = req.body;
+    const allowedRoles = ["customer", "entrepreneur"];
+    const finalRole = role && allowedRoles.includes(role) ? role : "customer";
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "name, email, password are required" });
