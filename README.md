@@ -1,123 +1,71 @@
 # HunarHub
-Skill Development & Talent Connect Platform
 
-------------------------------------------------------------
+HunarHub is a full-stack local services marketplace with role-based dashboards for customers, entrepreneurs, and admins. It helps customers discover skilled local entrepreneurs, send service requests, and track request progress while entrepreneurs manage profiles and incoming work.
 
-## Project Overview
+## Stack
 
-HunarHub is a full-stack web application designed to connect skilled individuals with opportunities. 
-The platform allows users to showcase their skills, explore opportunities, and interact through a structured frontend and backend system.
-
-This project demonstrates full-stack development using a separate frontend and backend architecture with proper CORS handling for both localhost and production environments.
-
-------------------------------------------------------------
-
-## Tech Stack
-
-Frontend:
-- HTML
-- CSS
-- JavaScript
-- Fetch API
-
-Backend:
-- Node.js
-- Express.js
-- REST API
-- CORS Configuration
-- Environment Variables (.env)
-
-Database:
-- MongoDB (if connected)
-
-Deployment:
-- Frontend Hosting (Netlify / Vercel)
-- Backend Hosting (Render / Railway / Node Hosting)
-
-------------------------------------------------------------
-
-## Project Structure
-
-HunarHub/
-│
-├── backend/        Backend server and API routes
-├── frontend/       Frontend UI files
-│
-└── README.md
-
-------------------------------------------------------------
+- Frontend: React, Vite, React Router, Axios, Vitest
+- Backend: Node.js, Express, MongoDB, Mongoose, JWT
+- Tooling: npm scripts, environment-based configuration, production builds
 
 ## Features
 
-- Full-stack architecture (Frontend + Backend)
-- RESTful API integration
-- CORS configured for localhost and production
-- Modular project structure
-- Environment variable support
-- Deployment-ready configuration
+- JWT authentication with customer and entrepreneur registration
+- Role-protected customer, entrepreneur, and admin dashboards
+- Entrepreneur profile creation, approval, discovery, and filtering
+- Service request workflow with accepted, rejected, and completed states
+- Modern responsive UI with accessible focus states and polished dashboard layouts
+- Clean repository setup with ignored secrets and dependency folders
 
-------------------------------------------------------------
+## Local Setup
 
-## How It Works
-
-1. User interacts with the frontend interface.
-2. Frontend sends requests to backend APIs.
-3. Backend processes the request.
-4. Database (if used) stores or retrieves data.
-5. Response is returned and displayed on frontend.
-
-------------------------------------------------------------
-
-## Installation & Setup
-
-1. Clone the repository:
-
-git clone https://github.com/your-username/HunarHub.git
-cd HunarHub
-
-2. Setup Backend:
-
+```bash
 cd backend
 npm install
+copy .env.example .env
+npm start
+```
 
-3. Create a .env file inside backend folder:
+```bash
+cd frontend
+npm install
+copy .env.example .env
+npm start
+```
 
+Frontend runs on `http://localhost:3000` unless that port is busy. Backend runs on `http://localhost:5000`.
+
+## Environment
+
+Backend `.env`:
+
+```bash
 PORT=5000
-MONGO_URL=your_mongodb_connection_string
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_strong_secret
+FRONTEND_URL=http://localhost:3000
+```
 
-4. Start Backend Server:
+Frontend `.env`:
 
-node server.js
+```bash
+VITE_API_URL=http://localhost:5000/api
+```
 
-5. Setup Frontend:
+## Quality Checks
 
-Open frontend folder and run using Live Server
-OR deploy using Netlify/Vercel
+```bash
+cd frontend
+npm run build
+npm test
+npm audit --audit-level=high
+```
 
-------------------------------------------------------------
-
-## Learning Outcomes
-
-- Built a complete full-stack application
-- Implemented proper CORS handling
-- Managed backend API routing
-- Connected frontend with backend
-- Understood deployment configuration
-- Fixed real-world production issues
-
-------------------------------------------------------------
-
-## Future Improvements
-
-- Add user authentication (JWT)
-- Add profile management
-- Add skill-based filtering system
-- Add admin dashboard
-- Improve UI with animations and responsiveness
-
-------------------------------------------------------------
+```bash
+cd backend
+npm audit --audit-level=high
+```
 
 ## Author
 
 Pavan Sai
-Full Stack Developer | MERN Stack Enthusiast

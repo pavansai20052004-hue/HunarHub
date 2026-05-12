@@ -1,11 +1,11 @@
-import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { connectDB } from "./config/db.js";
+import express from "express";
+import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import entrepreneurRoutes from "./routes/entrepreneurRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
+import { connectDB } from "./config/db.js";
 
 dotenv.config();
 
@@ -18,27 +18,30 @@ if (!process.env.JWT_SECRET) {
 }
 
 const app = express();
-const allowedOrigins = new Set([
-  "http://localhost:3000",
-  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map((url) => url.trim()) : [])
-].filter(Boolean));
+const allowedOrigins = new Set(
+  [
+    "http://localhost:3000",
+    ...(process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(",").map((url) => url.trim())
+      : []),
+  ].filter(Boolean)
+);
 
-app.use(cors({
-origin: (origin, callback) => {
-    // Allow server-to-server, Postman, and health checks without Origin header
-    if (!origin) return callback(null, true);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
 
-    if (allowedOrigins.has(origin)) {
-      return callback(null, true);
-    }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+app.use(express.json({ limit: "1mb" }));
 
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true
-}));
-app.use(express.json());
-
-app.get("/", (req, res) => res.send("HunarHub API running ✅"));
+app.get("/", (req, res) => res.send("HunarHub API running"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/entrepreneurs", entrepreneurRoutes);

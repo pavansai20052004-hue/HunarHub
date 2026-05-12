@@ -13,22 +13,28 @@ router.post("/register", async (req, res) => {
     const { name, email, password, role, location } = req.body;
     const allowedRoles = ["customer", "entrepreneur"];
     const finalRole = role && allowedRoles.includes(role) ? role : "customer";
+    const normalizedEmail = email?.trim().toLowerCase();
+    const trimmedName = name?.trim();
 
-    if (!name || !email || !password) {
+    if (!trimmedName || !normalizedEmail || !password) {
       return res.status(400).json({ message: "name, email, password are required" });
     }
 
-    const exists = await User.findOne({ email });
+    if (password.length < 6) {
+      return res.status(400).json({ message: "password must be at least 6 characters" });
+    }
+
+    const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(409).json({ message: "Email already registered" });
 
     const hashed = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: trimmedName,
+      email: normalizedEmail,
       password: hashed,
       role: finalRole,
-      location: location || ""
+      location: location?.trim() || ""
     });
 
     return res.status(201).json({
@@ -44,9 +50,13 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "email and password are required" });
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    const user = await User.findOne({ email });
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ message: "email and password are required" });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const ok = await bcrypt.compare(password, user.password);

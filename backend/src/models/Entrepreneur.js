@@ -6,6 +6,7 @@ const entrepreneurSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      unique: true,
     },
     category: {
       type: String,
@@ -15,18 +16,23 @@ const entrepreneurSchema = new mongoose.Schema(
     bio: {
       type: String,
       default: "",
+      trim: true,
+      maxlength: 500,
     },
     experienceYears: {
       type: Number,
       default: 0,
+      min: 0,
     },
     minPrice: {
       type: Number,
       default: 0,
+      min: 0,
     },
     maxPrice: {
       type: Number,
       default: 0,
+      min: 0,
     },
     isApproved: {
       type: Boolean,
