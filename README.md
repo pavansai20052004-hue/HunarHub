@@ -66,6 +66,32 @@ cd backend
 npm audit --audit-level=high
 ```
 
+## Deployment
+
+Recommended recruiter demo setup:
+
+- Frontend: Vercel, root directory `frontend`, build command `npm run build`, output directory `dist`
+- Backend: Render or Railway, root directory `backend`, build command `npm install`, start command `npm start`
+- Database: MongoDB Atlas connection string in `MONGO_URI`
+
+Production environment variables:
+
+Backend:
+
+```bash
+MONGO_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_strong_secret
+FRONTEND_URL=https://your-vercel-app.vercel.app
+```
+
+Frontend:
+
+```bash
+VITE_API_URL=https://your-backend-service-url/api
+```
+
+After both services are live, update `FRONTEND_URL` on the backend to the final Vercel URL and redeploy/restart the backend.
+
 ## Author
 
 Pavan Sai
