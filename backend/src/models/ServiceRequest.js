@@ -18,4 +18,7 @@ const serviceRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+serviceRequestSchema.index({ customer: 1, createdAt: -1 });
+serviceRequestSchema.index({ entrepreneur: 1, status: 1, createdAt: -1 });
+
 export default mongoose.model("ServiceRequest", serviceRequestSchema);

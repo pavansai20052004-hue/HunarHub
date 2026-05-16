@@ -28,7 +28,7 @@ export default function Login() {
       saveSession({ token: data.token, user: data.user });
       navigate(getDashboardPath(data.user.role), { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.message || "Login failed. Please try again.");
+      setError(err.userMessage || err?.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

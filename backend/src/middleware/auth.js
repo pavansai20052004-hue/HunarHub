@@ -1,24 +1,27 @@
 import jwt from "jsonwebtoken";
+import { config } from "../config/env.js";
+import { HttpError } from "../utils/httpError.js";
 
 export const protect = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
     if (!auth || !auth.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Not authorized, token missing" });
+      return next(new HttpError(401, "Not authorized, token missing"));
     }
 
     const token = auth.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, role }
-    next();
+    const decoded = jwt.verify(token, config.jwtSecret);
+    req.user = { id: decoded.id, role: decoded.role };
+    return next();
   } catch (err) {
-    return res.status(401).json({ message: "Not authorized, token invalid" });
+    const message = err.name === "TokenExpiredError" ? "Session expired" : "Not authorized, token invalid";
+    return next(new HttpError(401, message));
   }
 };
 
 export const requireRole = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
-    return res.status(403).json({ message: "Forbidden: insufficient role" });
+    return next(new HttpError(403, "Forbidden: insufficient role"));
   }
-  next();
+  return next();
 };

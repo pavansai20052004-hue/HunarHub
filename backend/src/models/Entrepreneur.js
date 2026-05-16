@@ -6,7 +6,6 @@ const entrepreneurSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
     category: {
       type: String,
@@ -41,5 +40,8 @@ const entrepreneurSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+entrepreneurSchema.index({ isApproved: 1, category: 1, updatedAt: -1 });
+entrepreneurSchema.index({ user: 1 }, { unique: true });
 
 export default mongoose.model("Entrepreneur", entrepreneurSchema);

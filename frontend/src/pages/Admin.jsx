@@ -17,7 +17,7 @@ export default function Admin() {
       const { data } = await api.get("/admin/entrepreneurs/pending");
       setPending(data || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to fetch pending profiles.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to fetch pending profiles.");
     } finally {
       setLoading(false);
     }
@@ -33,7 +33,7 @@ export default function Admin() {
       setNotice("Entrepreneur approved.");
       await fetchPending();
     } catch (err) {
-      setError(err?.response?.data?.message || "Approval failed.");
+      setError(err.userMessage || err?.response?.data?.message || "Approval failed.");
     } finally {
       setApprovingId(null);
     }

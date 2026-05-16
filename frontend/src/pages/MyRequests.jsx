@@ -6,7 +6,9 @@ import api from "./api";
 export default function MyRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -16,9 +18,25 @@ export default function MyRequests() {
       const { data } = await api.get("/requests/my");
       setRequests(data || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to fetch requests.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to fetch requests.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cancelRequest = async (id) => {
+    setUpdatingId(id);
+    setError("");
+    setNotice("");
+
+    try {
+      await api.patch(`/requests/${id}/cancel`);
+      setNotice("Request cancelled.");
+      await fetchRequests();
+    } catch (err) {
+      setError(err.userMessage || err?.response?.data?.message || "Unable to cancel request.");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -50,7 +68,9 @@ export default function MyRequests() {
           </button>
         </div>
 
-        {error && <div className="notice noticeError">{error}</div>}
+        {(error || notice) && (
+          <div className={error ? "notice noticeError" : "notice noticeSuccess"}>{error || notice}</div>
+        )}
 
         {loading ? (
           <div className="emptyState">Loading requests...</div>
@@ -73,6 +93,18 @@ export default function MyRequests() {
                   <span>Location: {request.entrepreneur?.user?.location || "Unavailable"}</span>
                   <span>Preferred: {formatDate(request.preferredDate)}</span>
                 </div>
+
+                {request.status === "pending" && (
+                  <div className="buttonRow">
+                    <button
+                      className="btn btnGhost"
+                      onClick={() => cancelRequest(request._id)}
+                      disabled={updatingId === request._id}
+                    >
+                      {updatingId === request._id ? "Cancelling..." : "Cancel request"}
+                    </button>
+                  </div>
+                )}
               </article>
             ))}
           </div>

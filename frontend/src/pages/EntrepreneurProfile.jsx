@@ -34,7 +34,7 @@ export default function EntrepreneurProfile() {
       });
     } catch (err) {
       if (err?.response?.status !== 404) {
-        setError(err?.response?.data?.message || "Unable to load profile.");
+        setError(err.userMessage || err?.response?.data?.message || "Unable to load profile.");
       }
       setProfile(null);
     } finally {
@@ -77,7 +77,7 @@ export default function EntrepreneurProfile() {
       setNotice(data.message || "Profile saved.");
       await loadProfile();
     } catch (err) {
-      setError(err?.response?.data?.message || "Save failed.");
+      setError(err.userMessage || err?.response?.data?.message || "Save failed.");
     } finally {
       setSaving(false);
     }

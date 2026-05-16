@@ -4,9 +4,9 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,3 +16,5 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         sync: false
+      - key: RATE_LIMIT_MAX
+        value: 250

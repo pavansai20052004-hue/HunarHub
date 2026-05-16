@@ -11,6 +11,8 @@ export default function Customer() {
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [location, setLocation] = useState("");
+  const [maxBudget, setMaxBudget] = useState("");
   const [category, setCategory] = useState("all");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -23,7 +25,7 @@ export default function Customer() {
       const { data } = await api.get("/entrepreneurs");
       setEntrepreneurs(data || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to load entrepreneurs.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to load entrepreneurs.");
     } finally {
       setLoading(false);
     }
@@ -35,6 +37,8 @@ export default function Customer() {
 
   const filtered = useMemo(() => {
     const text = query.trim().toLowerCase();
+    const locationText = location.trim().toLowerCase();
+    const budget = Number(maxBudget);
 
     return entrepreneurs.filter((entrepreneur) => {
       const haystack = [
@@ -49,10 +53,14 @@ export default function Customer() {
 
       const matchesText = !text || haystack.includes(text);
       const matchesCategory = category === "all" || entrepreneur.category === category;
+      const matchesLocation =
+        !locationText || (entrepreneur.user?.location || "").toLowerCase().includes(locationText);
+      const matchesBudget =
+        !maxBudget || (Number.isFinite(budget) && Number(entrepreneur.minPrice) <= budget);
 
-      return matchesText && matchesCategory;
+      return matchesText && matchesCategory && matchesLocation && matchesBudget;
     });
-  }, [entrepreneurs, query, category]);
+  }, [entrepreneurs, query, category, location, maxBudget]);
 
   const openModal = (entrepreneur) => {
     setSelected(entrepreneur);
@@ -77,7 +85,7 @@ export default function Customer() {
       setSelected(null);
       navigate("/my-requests");
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to send request.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to send request.");
     } finally {
       setSubmittingId(null);
     }
@@ -133,6 +141,28 @@ export default function Customer() {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="field toolbarSelect">
+            <span className="label">Location</span>
+            <input
+              className="input"
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              placeholder="Area or city"
+            />
+          </label>
+
+          <label className="field toolbarSelect">
+            <span className="label">Max budget</span>
+            <input
+              className="input"
+              value={maxBudget}
+              min="0"
+              onChange={(event) => setMaxBudget(event.target.value)}
+              placeholder="INR"
+              type="number"
+            />
           </label>
 
           <button className="btn btnGhost" onClick={fetchEntrepreneurs} disabled={loading}>

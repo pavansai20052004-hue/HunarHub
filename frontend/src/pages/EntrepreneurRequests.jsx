@@ -18,7 +18,7 @@ export default function EntrepreneurRequests() {
       const { data } = await api.get("/requests/entrepreneur");
       setRequests(data || []);
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to fetch requests.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to fetch requests.");
       if (err?.response?.status === 401) navigate("/login");
     } finally {
       setLoading(false);
@@ -37,7 +37,7 @@ export default function EntrepreneurRequests() {
       await api.patch(`/requests/${id}/status`, { status });
       await fetchRequests();
     } catch (err) {
-      setError(err?.response?.data?.message || "Unable to update status.");
+      setError(err.userMessage || err?.response?.data?.message || "Unable to update status.");
     } finally {
       setUpdatingId(null);
     }

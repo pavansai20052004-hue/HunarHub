@@ -14,7 +14,20 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
     if (open) setForm(emptyForm);
   }, [open, entrepreneur?._id]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
+
+  const today = new Date().toISOString().slice(0, 10);
 
   const handleChange = (event) =>
     setForm({ ...form, [event.target.name]: event.target.value });
@@ -78,6 +91,7 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
               className="input"
               name="preferredDate"
               type="date"
+              min={today}
               value={form.preferredDate}
               onChange={handleChange}
             />

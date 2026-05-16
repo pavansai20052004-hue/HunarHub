@@ -1,35 +1,41 @@
 import express from "express";
-import Entrepreneur from "../models/Entrepreneur.js";
 import { protect, requireRole } from "../middleware/auth.js";
+import Entrepreneur from "../models/Entrepreneur.js";
+import { asyncHandler, HttpError } from "../utils/httpError.js";
 
 const router = express.Router();
 const categories = ["cobbler", "potter", "tailor", "artisan", "vendor"];
 
-const toNumber = (value) => {
+const toNonNegativeNumber = (value, fieldName) => {
+  if (value === undefined || value === null || value === "") return 0;
+
   const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
+  if (!Number.isFinite(number) || number < 0) {
+    throw new HttpError(400, `${fieldName} must be a non-negative number`);
+  }
+
+  return number;
 };
 
-router.post("/", protect, requireRole("entrepreneur"), async (req, res) => {
-  try {
+router.post(
+  "/",
+  protect,
+  requireRole("entrepreneur"),
+  asyncHandler(async (req, res) => {
     const payload = {
       category: req.body.category,
       bio: req.body.bio?.trim() || "",
-      experienceYears: toNumber(req.body.experienceYears),
-      minPrice: toNumber(req.body.minPrice),
-      maxPrice: toNumber(req.body.maxPrice),
+      experienceYears: toNonNegativeNumber(req.body.experienceYears, "Experience"),
+      minPrice: toNonNegativeNumber(req.body.minPrice, "Minimum price"),
+      maxPrice: toNonNegativeNumber(req.body.maxPrice, "Maximum price"),
     };
 
     if (!categories.includes(payload.category)) {
-      return res.status(400).json({ message: "Invalid category" });
-    }
-
-    if (payload.experienceYears < 0 || payload.minPrice < 0 || payload.maxPrice < 0) {
-      return res.status(400).json({ message: "Experience and prices cannot be negative" });
+      throw new HttpError(400, "Invalid category");
     }
 
     if (payload.maxPrice < payload.minPrice) {
-      return res.status(400).json({ message: "maxPrice must be greater than or equal to minPrice" });
+      throw new HttpError(400, "Maximum price must be greater than or equal to minimum price");
     }
 
     const existing = await Entrepreneur.findOne({ user: req.user.id });
@@ -47,46 +53,52 @@ router.post("/", protect, requireRole("entrepreneur"), async (req, res) => {
     });
 
     return res.status(201).json({ message: "Profile created", profile });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-router.get("/me", protect, requireRole("entrepreneur"), async (req, res) => {
-  try {
+router.get(
+  "/me",
+  protect,
+  requireRole("entrepreneur"),
+  asyncHandler(async (req, res) => {
     const profile = await Entrepreneur.findOne({ user: req.user.id }).populate(
       "user",
       "name location"
     );
 
     if (!profile) {
-      return res.status(404).json({ message: "Entrepreneur profile not found" });
+      throw new HttpError(404, "Entrepreneur profile not found");
     }
 
     return res.json(profile);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const { category, location, minPrice, maxPrice } = req.query;
     const filter = { isApproved: true };
 
     if (category) {
       if (!categories.includes(category)) {
-        return res.status(400).json({ message: "Invalid category" });
+        throw new HttpError(400, "Invalid category");
       }
       filter.category = category;
     }
 
-    if (minPrice) filter.maxPrice = { $gte: Number(minPrice) };
-    if (maxPrice) filter.minPrice = { $lte: Number(maxPrice) };
+    if (minPrice !== undefined && minPrice !== "") {
+      filter.maxPrice = { $gte: toNonNegativeNumber(minPrice, "Minimum price") };
+    }
+
+    if (maxPrice !== undefined && maxPrice !== "") {
+      filter.minPrice = { $lte: toNonNegativeNumber(maxPrice, "Maximum price") };
+    }
 
     const entrepreneurs = await Entrepreneur.find(filter)
       .populate("user", "name location")
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 })
+      .limit(100);
 
     if (location) {
       const normalizedLocation = location.toLowerCase();
@@ -98,9 +110,7 @@ router.get("/", async (req, res) => {
     }
 
     return res.json(entrepreneurs);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
 export default router;

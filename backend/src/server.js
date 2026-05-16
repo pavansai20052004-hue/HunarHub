@@ -1,55 +1,57 @@
-import cors from "cors";
-import dotenv from "dotenv";
-import express from "express";
-import adminRoutes from "./routes/adminRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import entrepreneurRoutes from "./routes/entrepreneurRoutes.js";
-import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
-import { connectDB } from "./config/db.js";
+import app from "./app.js";
+import { config, validateEnv } from "./config/env.js";
+import { connectDB, disconnectDB } from "./config/db.js";
 
-dotenv.config();
+validateEnv();
 
-if (!process.env.MONGO_URI) {
-  throw new Error("Missing MONGO_URI environment variable");
-}
+let server;
+let shuttingDown = false;
 
-if (!process.env.JWT_SECRET) {
-  throw new Error("Missing JWT_SECRET environment variable");
-}
+const start = async () => {
+  try {
+    await connectDB();
+    server = app.listen(config.port, () => {
+      console.log(`HunarHub API listening on port ${config.port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start HunarHub API:", error.message);
+    process.exit(1);
+  }
+};
 
-const app = express();
-const allowedOrigins = new Set(
-  [
-    "http://localhost:3000",
-    ...(process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(",").map((url) => url.trim())
-      : []),
-  ].filter(Boolean)
-);
+const shutdown = async (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin)) {
-        return callback(null, true);
-      }
+  console.log(`${signal} received. Closing HunarHub API...`);
 
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
-app.use(express.json({ limit: "1mb" }));
+  const forceExit = setTimeout(() => {
+    console.error("Graceful shutdown timed out.");
+    process.exit(1);
+  }, 10000);
+  forceExit.unref();
 
-app.get("/", (req, res) => res.send("HunarHub API running"));
+  if (server) {
+    server.close(async () => {
+      await disconnectDB();
+      console.log("HunarHub API closed.");
+      process.exit(0);
+    });
+  } else {
+    await disconnectDB();
+    process.exit(0);
+  }
+};
 
-app.use("/api/auth", authRoutes);
-app.use("/api/entrepreneurs", entrepreneurRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/requests", serviceRequestRoutes);
-
-const PORT = process.env.PORT || 5000;
-
-connectDB().then(() => {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled promise rejection:", error);
+  shutdown("unhandledRejection");
 });
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+  shutdown("uncaughtException");
+});
+
+start();

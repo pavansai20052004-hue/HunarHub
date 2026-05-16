@@ -22,13 +22,21 @@ export default function EntrepreneurDashboard() {
       if (profileResult.status === "fulfilled") {
         setProfile(profileResult.value.data);
       } else if (profileResult.reason?.response?.status !== 404) {
-        setError(profileResult.reason?.response?.data?.message || "Unable to load profile.");
+        setError(
+          profileResult.reason?.userMessage ||
+            profileResult.reason?.response?.data?.message ||
+            "Unable to load profile."
+        );
       }
 
       if (requestsResult.status === "fulfilled") {
         setRequests(requestsResult.value.data || []);
       } else if (requestsResult.reason?.response?.status !== 404) {
-        setError(requestsResult.reason?.response?.data?.message || "Unable to load requests.");
+        setError(
+          requestsResult.reason?.userMessage ||
+            requestsResult.reason?.response?.data?.message ||
+            "Unable to load requests."
+        );
       }
     } finally {
       setLoading(false);

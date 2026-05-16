@@ -269,6 +269,12 @@ button:disabled {
   background: var(--info-soft);
 }
 
+.badgeNeutral {
+  border-color: rgba(102, 112, 133, 0.24);
+  color: var(--muted);
+  background: #f4f6f8;
+}
+
 .pageHeader,
 .heroBand {
   display: flex;
@@ -584,7 +590,7 @@ button:disabled {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 220px auto;
+  grid-template-columns: minmax(220px, 1fr) 180px 180px 150px auto;
   gap: 14px;
   align-items: end;
   margin-bottom: 18px;
@@ -661,6 +667,16 @@ button:disabled {
   background: var(--surface-soft);
   text-align: center;
   font-weight: 800;
+}
+
+.emptyState h1,
+.emptyState p {
+  margin: 0 0 12px;
+}
+
+.emptyState p {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .emptyState.compact {

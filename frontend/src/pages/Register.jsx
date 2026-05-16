@@ -36,7 +36,7 @@ export default function Register() {
       saveSession({ token: data.token, user: data.user });
       navigate(getDashboardPath(data.user.role), { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.message || "Registration failed. Please try again.");
+      setError(err.userMessage || err?.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -91,8 +91,8 @@ export default function Register() {
                 className="input"
                 name="password"
                 type="password"
-                minLength="6"
-                placeholder="Minimum 6 characters"
+                minLength="8"
+                placeholder="Minimum 8 characters"
                 value={form.password}
                 onChange={handleChange}
                 required

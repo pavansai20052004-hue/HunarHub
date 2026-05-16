@@ -7,6 +7,7 @@ export const statusBadgeClass = (status = "") => {
   if (normalized === "accepted") return "badge badgeSuccess";
   if (normalized === "rejected") return "badge badgeDanger";
   if (normalized === "completed") return "badge badgeInfo";
+  if (normalized === "cancelled") return "badge badgeNeutral";
 
   return "badge";
 };

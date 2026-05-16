@@ -1,26 +1,32 @@
 import express from "express";
 import mongoose from "mongoose";
-import Entrepreneur from "../models/Entrepreneur.js";
 import { protect, requireRole } from "../middleware/auth.js";
+import Entrepreneur from "../models/Entrepreneur.js";
+import { asyncHandler, HttpError } from "../utils/httpError.js";
 
 const router = express.Router();
 
-router.get("/entrepreneurs/pending", protect, requireRole("admin"), async (req, res) => {
-  try {
+router.get(
+  "/entrepreneurs/pending",
+  protect,
+  requireRole("admin"),
+  asyncHandler(async (_req, res) => {
     const pending = await Entrepreneur.find({ isApproved: false })
       .populate("user", "name email location role")
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: 1 })
+      .limit(100);
 
     return res.json(pending);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-router.patch("/entrepreneurs/:id/approve", protect, requireRole("admin"), async (req, res) => {
-  try {
+router.patch(
+  "/entrepreneurs/:id/approve",
+  protect,
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: "Invalid entrepreneur id" });
+      throw new HttpError(400, "Invalid entrepreneur id");
     }
 
     const updated = await Entrepreneur.findByIdAndUpdate(
@@ -30,13 +36,11 @@ router.patch("/entrepreneurs/:id/approve", protect, requireRole("admin"), async 
     ).populate("user", "name email location role");
 
     if (!updated) {
-      return res.status(404).json({ message: "Entrepreneur profile not found" });
+      throw new HttpError(404, "Entrepreneur profile not found");
     }
 
     return res.json({ message: "Approved", profile: updated });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
 export default router;
