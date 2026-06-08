@@ -3,8 +3,8 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-import mongoose from "mongoose";
 import { config, isProduction } from "./config/env.js";
+import { getDbState } from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { requestContext } from "./middleware/requestContext.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -21,8 +21,6 @@ const allowedOrigins = new Set(
     ...config.frontendUrls,
   ].filter(Boolean)
 );
-
-const dbStates = ["disconnected", "connected", "connecting", "disconnecting"];
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -69,7 +67,7 @@ app.get("/", (_req, res) =>
 );
 
 app.get("/health", (_req, res) => {
-  const dbState = dbStates[mongoose.connection.readyState] || "unknown";
+  const dbState = getDbState();
   const healthy = dbState === "connected";
 
   res.status(healthy ? 200 : 503).json({

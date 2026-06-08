@@ -1,20 +1,17 @@
 import express from "express";
-import mongoose from "mongoose";
 import { protect, requireRole } from "../middleware/auth.js";
 import Entrepreneur from "../models/Entrepreneur.js";
 import { asyncHandler, HttpError } from "../utils/httpError.js";
 
 const router = express.Router();
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 router.get(
   "/entrepreneurs/pending",
   protect,
   requireRole("admin"),
   asyncHandler(async (_req, res) => {
-    const pending = await Entrepreneur.find({ isApproved: false })
-      .populate("user", "name email location role")
-      .sort({ createdAt: 1 })
-      .limit(100);
+    const pending = await Entrepreneur.listPending();
 
     return res.json(pending);
   })
@@ -25,15 +22,11 @@ router.patch(
   protect,
   requireRole("admin"),
   asyncHandler(async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!uuidPattern.test(req.params.id)) {
       throw new HttpError(400, "Invalid entrepreneur id");
     }
 
-    const updated = await Entrepreneur.findByIdAndUpdate(
-      req.params.id,
-      { isApproved: true },
-      { new: true, runValidators: true }
-    ).populate("user", "name email location role");
+    const updated = await Entrepreneur.approve(req.params.id);
 
     if (!updated) {
       throw new HttpError(404, "Entrepreneur profile not found");

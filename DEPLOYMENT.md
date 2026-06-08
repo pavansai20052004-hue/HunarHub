@@ -2,7 +2,7 @@
 
 ## Required Services
 
-- MongoDB Atlas database
+- Neon Postgres database
 - Backend host: Render or Railway
 - Frontend host: Vercel
 
@@ -19,10 +19,14 @@ Required environment variables:
 
 ```bash
 NODE_ENV=production
-MONGO_URI=your_mongodb_atlas_connection_string
+DATABASE_URL=your_neon_postgres_connection_string
 JWT_SECRET=your_strong_32_plus_character_secret
 FRONTEND_URL=https://your-frontend-domain.vercel.app
 RATE_LIMIT_MAX=250
+DB_POOL_MAX=10
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your_strong_12_plus_character_admin_password
+ADMIN_NAME=HunarHub Admin
 ```
 
 Health check path:
@@ -31,7 +35,7 @@ Health check path:
 /health
 ```
 
-The health check returns `200` only when the API can see an active MongoDB connection.
+The health check returns `200` only when the API can see an active Postgres connection.
 
 ## Frontend
 

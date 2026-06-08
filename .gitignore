@@ -6,4 +6,5 @@ coverage/
 .env.*
 !.env.example
 *.log
+.neon
 .DS_Store

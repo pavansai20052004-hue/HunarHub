@@ -5,7 +5,7 @@ HunarHub is a full-stack local services marketplace with role-based dashboards f
 ## Stack
 
 - Frontend: React, Vite, React Router, Axios, Vitest
-- Backend: Node.js, Express, MongoDB, Mongoose, JWT
+- Backend: Node.js, Express, Neon/Postgres, JWT
 - Tooling: npm scripts, environment-based configuration, production builds
 
 ## Features
@@ -16,7 +16,7 @@ HunarHub is a full-stack local services marketplace with role-based dashboards f
 - Service request workflow with accepted, rejected, and completed states
 - Customer-side cancellation for pending service requests
 - Production API hardening with security headers, compression, request IDs, rate limits, and JSON health checks
-- MongoDB indexes for authentication, discovery, and request dashboards
+- Postgres schema bootstrap and indexes for authentication, discovery, and request dashboards
 - Modern responsive UI with accessible focus states and polished dashboard layouts
 - Clean repository setup with ignored secrets and dependency folders
 
@@ -44,12 +44,16 @@ Backend `.env`:
 
 ```bash
 PORT=5000
-MONGO_URI=your_mongodb_connection_string
+DATABASE_URL=your_neon_postgres_connection_string
 JWT_SECRET=your_strong_32_plus_character_secret
 FRONTEND_URL=http://localhost:3000
 BCRYPT_ROUNDS=10
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=250
+DB_POOL_MAX=10
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+ADMIN_NAME=HunarHub Admin
 ```
 
 Frontend `.env`:
@@ -79,17 +83,21 @@ Recommended recruiter demo setup:
 
 - Frontend: Vercel, root directory `frontend`, build command `npm run build`, output directory `dist`
 - Backend: Render or Railway, root directory `backend`, build command `npm ci`, start command `npm start`, health check `/health`
-- Database: MongoDB Atlas connection string in `MONGO_URI`
+- Database: Neon Postgres connection string in `DATABASE_URL`
 
 Production environment variables:
 
 Backend:
 
 ```bash
-MONGO_URI=your_mongodb_atlas_connection_string
+DATABASE_URL=your_neon_postgres_connection_string
 JWT_SECRET=your_strong_32_plus_character_secret
 FRONTEND_URL=https://your-vercel-app.vercel.app
 RATE_LIMIT_MAX=250
+DB_POOL_MAX=10
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your_strong_12_plus_character_admin_password
+ADMIN_NAME=HunarHub Admin
 ```
 
 Frontend:

@@ -1,17 +1,41 @@
-import mongoose from "mongoose";
+import { query } from "../config/db.js";
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true, minlength: 2 },
-    email: { type: String, required: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ["customer", "entrepreneur", "admin"], default: "customer" },
-    location: { type: String, default: "", trim: true },
+const mapUser = (row) =>
+  row
+    ? {
+        _id: row.id,
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        password: row.password,
+        role: row.role,
+        location: row.location,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }
+    : null;
+
+const User = {
+  async existsByEmail(email) {
+    const { rowCount } = await query("SELECT 1 FROM users WHERE email = $1 LIMIT 1", [email]);
+    return rowCount > 0;
   },
-  { timestamps: true }
-);
 
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ role: 1, createdAt: -1 });
+  async create({ name, email, password, role, location }) {
+    const { rows } = await query(
+      `INSERT INTO users (name, email, password, role, location)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [name, email, password, role, location]
+    );
 
-export default mongoose.model("User", userSchema);
+    return mapUser(rows[0]);
+  },
+
+  async findByEmail(email) {
+    const { rows } = await query("SELECT * FROM users WHERE email = $1 LIMIT 1", [email]);
+    return mapUser(rows[0]);
+  },
+};
+
+export default User;

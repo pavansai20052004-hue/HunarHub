@@ -1,14 +1,14 @@
 import express from "express";
-import mongoose from "mongoose";
 import { protect, requireRole } from "../middleware/auth.js";
 import Entrepreneur from "../models/Entrepreneur.js";
 import ServiceRequest from "../models/ServiceRequest.js";
 import { asyncHandler, HttpError } from "../utils/httpError.js";
 
 const router = express.Router();
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const ensureObjectId = (value, label) => {
-  if (!mongoose.Types.ObjectId.isValid(value)) {
+  if (!uuidPattern.test(value)) {
     throw new HttpError(400, `Invalid ${label}`);
   }
 };
@@ -55,12 +55,7 @@ router.get(
   protect,
   requireRole("customer"),
   asyncHandler(async (req, res) => {
-    const requests = await ServiceRequest.find({ customer: req.user.id })
-      .populate({
-        path: "entrepreneur",
-        populate: { path: "user", select: "name location" },
-      })
-      .sort({ createdAt: -1 });
+    const requests = await ServiceRequest.listByCustomer(req.user.id);
 
     return res.json(requests);
   })
@@ -71,15 +66,13 @@ router.get(
   protect,
   requireRole("entrepreneur"),
   asyncHandler(async (req, res) => {
-    const profile = await Entrepreneur.findOne({ user: req.user.id });
+    const profile = await Entrepreneur.findByUserId(req.user.id);
 
     if (!profile) {
       throw new HttpError(404, "Entrepreneur profile not found");
     }
 
-    const requests = await ServiceRequest.find({ entrepreneur: profile._id })
-      .populate("customer", "name email")
-      .sort({ createdAt: -1 });
+    const requests = await ServiceRequest.listByEntrepreneur(profile._id);
 
     return res.json(requests);
   })
@@ -102,7 +95,7 @@ router.patch(
       throw new HttpError(400, "Status must be accepted, rejected, or completed");
     }
 
-    const myProfile = await Entrepreneur.findOne({ user: req.user.id });
+    const myProfile = await Entrepreneur.findByUserId(req.user.id);
     if (!myProfile) {
       throw new HttpError(404, "Entrepreneur profile not found");
     }
@@ -112,7 +105,7 @@ router.patch(
       throw new HttpError(404, "Request not found");
     }
 
-    if (request.entrepreneur.toString() !== myProfile._id.toString()) {
+    if (request.entrepreneur?._id !== myProfile._id) {
       throw new HttpError(403, "Forbidden: not your request");
     }
 
@@ -120,10 +113,9 @@ router.patch(
       throw new HttpError(400, `Cannot change request from ${request.status} to ${status}`);
     }
 
-    request.status = status;
-    await request.save();
+    const updated = await ServiceRequest.updateStatus(req.params.id, status);
 
-    return res.json({ message: `Request ${status}`, request });
+    return res.json({ message: `Request ${status}`, request: updated });
   })
 );
 
@@ -139,7 +131,7 @@ router.patch(
       throw new HttpError(404, "Request not found");
     }
 
-    if (request.customer.toString() !== req.user.id) {
+    if (request.customer?._id !== req.user.id) {
       throw new HttpError(403, "Forbidden: not your request");
     }
 
@@ -147,10 +139,9 @@ router.patch(
       throw new HttpError(400, "Only pending requests can be cancelled");
     }
 
-    request.status = "cancelled";
-    await request.save();
+    const updated = await ServiceRequest.updateStatus(req.params.id, "cancelled");
 
-    return res.json({ message: "Request cancelled", request });
+    return res.json({ message: "Request cancelled", request: updated });
   })
 );
 

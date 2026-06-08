@@ -40,7 +40,7 @@ router.post(
       throw new HttpError(400, "Password must be at least 8 characters");
     }
 
-    const exists = await User.exists({ email: normalizedEmail });
+    const exists = await User.existsByEmail(normalizedEmail);
     if (exists) throw new HttpError(409, "Email already registered");
 
     const hashed = await bcrypt.hash(password, config.bcryptRounds);
@@ -71,7 +71,7 @@ router.post(
       throw new HttpError(400, "Email and password are required");
     }
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findByEmail(normalizedEmail);
     if (!user) throw new HttpError(401, "Invalid credentials");
 
     const ok = await bcrypt.compare(password, user.password);

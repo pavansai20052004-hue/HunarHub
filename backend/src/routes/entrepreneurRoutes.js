@@ -38,21 +38,13 @@ router.post(
       throw new HttpError(400, "Maximum price must be greater than or equal to minimum price");
     }
 
-    const existing = await Entrepreneur.findOne({ user: req.user.id });
+    const existing = await Entrepreneur.findByUserId(req.user.id);
+    const profile = await Entrepreneur.upsertForUser(req.user.id, payload);
 
-    if (existing) {
-      Object.assign(existing, payload);
-      await existing.save();
-      return res.json({ message: "Profile updated", profile: existing });
-    }
-
-    const profile = await Entrepreneur.create({
-      ...payload,
-      user: req.user.id,
-      isApproved: false,
+    return res.status(existing ? 200 : 201).json({
+      message: existing ? "Profile updated" : "Profile created",
+      profile,
     });
-
-    return res.status(201).json({ message: "Profile created", profile });
   })
 );
 
@@ -61,10 +53,7 @@ router.get(
   protect,
   requireRole("entrepreneur"),
   asyncHandler(async (req, res) => {
-    const profile = await Entrepreneur.findOne({ user: req.user.id }).populate(
-      "user",
-      "name location"
-    );
+    const profile = await Entrepreneur.findByUserId(req.user.id);
 
     if (!profile) {
       throw new HttpError(404, "Entrepreneur profile not found");
@@ -78,37 +67,28 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const { category, location, minPrice, maxPrice } = req.query;
-    const filter = { isApproved: true };
+    const filters = {};
 
     if (category) {
       if (!categories.includes(category)) {
         throw new HttpError(400, "Invalid category");
       }
-      filter.category = category;
+      filters.category = category;
     }
 
     if (minPrice !== undefined && minPrice !== "") {
-      filter.maxPrice = { $gte: toNonNegativeNumber(minPrice, "Minimum price") };
+      filters.minPrice = toNonNegativeNumber(minPrice, "Minimum price");
     }
 
     if (maxPrice !== undefined && maxPrice !== "") {
-      filter.minPrice = { $lte: toNonNegativeNumber(maxPrice, "Maximum price") };
+      filters.maxPrice = toNonNegativeNumber(maxPrice, "Maximum price");
     }
-
-    const entrepreneurs = await Entrepreneur.find(filter)
-      .populate("user", "name location")
-      .sort({ updatedAt: -1 })
-      .limit(100);
 
     if (location) {
-      const normalizedLocation = location.toLowerCase();
-      return res.json(
-        entrepreneurs.filter((entrepreneur) =>
-          (entrepreneur.user?.location || "").toLowerCase().includes(normalizedLocation)
-        )
-      );
+      filters.location = location.trim();
     }
 
+    const entrepreneurs = await Entrepreneur.listApproved(filters);
     return res.json(entrepreneurs);
   })
 );
