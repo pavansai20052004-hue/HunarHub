@@ -1,0 +1,13 @@
+{
+  "name": "hunarhub",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "postinstall": "npm ci --prefix backend --no-audit --no-fund",
+    "start": "npm start --prefix backend",
+    "test": "npm test --prefix backend && npm test --prefix frontend"
+  }
+}

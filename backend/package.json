@@ -10,6 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "build:frontend": "npm ci --prefix ../frontend --no-audit --no-fund && npm run build --prefix ../frontend",
+    "postinstall": "npm run build:frontend",
     "check": "node scripts/check-syntax.js",
     "test": "npm run check && node --test"
   },

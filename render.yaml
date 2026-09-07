@@ -17,7 +17,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://frontend-two-henna-78.vercel.app
+        value: https://hunarhub-k1k0.onrender.com,https://frontend-two-henna-78.vercel.app
       - key: RATE_LIMIT_MAX
         value: 250
       - key: DB_POOL_MAX

@@ -38,6 +38,9 @@ npm start
 
 Frontend runs on `http://localhost:3000` unless that port is busy. Backend runs on `http://localhost:5000`.
 
+In production, the backend build also creates and serves the frontend, so the complete
+application is available from the Render service URL.
+
 ## Environment
 
 Backend `.env`:

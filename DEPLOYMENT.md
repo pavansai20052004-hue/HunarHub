@@ -15,6 +15,9 @@ npm ci
 npm start
 ```
 
+The backend install builds the frontend and Express serves it from the same Render
+domain. This is the primary deployment and does not require Vercel.
+
 Required environment variables:
 
 ```bash

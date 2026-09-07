@@ -3,6 +3,8 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config, isProduction } from "./config/env.js";
 import { checkDbHealth } from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -18,6 +20,7 @@ const allowedOrigins = new Set(
   [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://hunarhub-k1k0.onrender.com",
     ...config.frontendUrls,
   ].filter(Boolean)
 );
@@ -58,7 +61,7 @@ const apiLimiter = rateLimit({
   message: { message: "Too many requests. Please try again shortly." },
 });
 
-app.get("/", (_req, res) =>
+app.get("/api", (_req, res) =>
   res.json({
     name: "HunarHub API",
     status: "running",
@@ -82,6 +85,20 @@ app.use("/api/auth", authRoutes);
 app.use("/api/entrepreneurs", entrepreneurRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/requests", serviceRequestRoutes);
+
+if (isProduction) {
+  const frontendDist = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../frontend/dist"
+  );
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && req.accepts("html")) {
+      return res.sendFile(path.join(frontendDist, "index.html"));
+    }
+    return next();
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
