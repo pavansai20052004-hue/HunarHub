@@ -63,6 +63,7 @@ export default function Customer() {
   }, [entrepreneurs, query, category, location, maxBudget]);
 
   const openModal = (entrepreneur) => {
+    setError("");
     setSelected(entrepreneur);
     setOpen(true);
   };
@@ -223,6 +224,7 @@ export default function Customer() {
         onSubmit={submitRequest}
         entrepreneur={selected}
         submitting={Boolean(submittingId)}
+        error={error}
       />
     </main>
   );

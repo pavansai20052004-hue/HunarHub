@@ -23,7 +23,11 @@ const signToken = (user) =>
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
-    const { name, email, password, role, location } = req.body;
+    const { name, email, password, role, location } = req.body || {};
+    if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string" ||
+        (location !== undefined && typeof location !== "string")) {
+      throw new HttpError(400, "Name, email, and password must be text");
+    }
     const finalRole = role && allowedRoles.includes(role) ? role : "customer";
     const normalizedEmail = email?.trim().toLowerCase();
     const trimmedName = name?.trim();
@@ -36,8 +40,15 @@ router.post(
       throw new HttpError(400, "Please provide a valid email address");
     }
 
+    if (trimmedName.length < 2) {
+      throw new HttpError(400, "Name must be at least 2 characters");
+    }
+
     if (password.length < 8) {
       throw new HttpError(400, "Password must be at least 8 characters");
+    }
+    if (Buffer.byteLength(password, "utf8") > 72) {
+      throw new HttpError(400, "Password must be at most 72 UTF-8 bytes");
     }
 
     const exists = await User.existsByEmail(normalizedEmail);
@@ -64,7 +75,10 @@ router.post(
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+    if (typeof email !== "string" || typeof password !== "string") {
+      throw new HttpError(400, "Email and password must be text");
+    }
     const normalizedEmail = email?.trim().toLowerCase();
 
     if (!normalizedEmail || !password) {

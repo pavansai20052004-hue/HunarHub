@@ -132,6 +132,7 @@ export default function EntrepreneurProfile() {
               <textarea
                 className="input textarea"
                 name="bio"
+                maxLength={500}
                 value={form.bio}
                 onChange={onChange}
                 placeholder="Short profile customers will see"

@@ -26,7 +26,7 @@ const normalizeError = (error) => {
     };
   }
 
-  if (error?.code === "23505") {
+  if (error?.code === 11000) {
     return {
       statusCode: 409,
       message: "A record with those details already exists",
@@ -34,7 +34,7 @@ const normalizeError = (error) => {
     };
   }
 
-  if (error?.code === "22P02") {
+  if (error?.name === "CastError") {
     return {
       statusCode: 400,
       message: "Invalid resource identifier",

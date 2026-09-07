@@ -14,6 +14,10 @@ export const getStoredUser = () => {
 };
 
 export const saveSession = ({ token, user }) => {
+  if (typeof token !== "string" || !token || !user?.id ||
+      !["customer", "entrepreneur", "admin"].includes(user.role)) {
+    throw new Error("The server returned an invalid login response. Please contact support.");
+  }
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
 };

@@ -5,10 +5,10 @@ import ServiceRequest from "../models/ServiceRequest.js";
 import { asyncHandler, HttpError } from "../utils/httpError.js";
 
 const router = express.Router();
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const objectIdPattern = /^[0-9a-f]{24}$/i;
 
 const ensureObjectId = (value, label) => {
-  if (!uuidPattern.test(value)) {
+  if (!objectIdPattern.test(value)) {
     throw new HttpError(400, `Invalid ${label}`);
   }
 };
@@ -18,6 +18,11 @@ router.post(
   protect,
   requireRole("customer"),
   asyncHandler(async (req, res) => {
+    if (!req.body || typeof req.body.serviceType !== "string" ||
+        (req.body.description !== undefined && typeof req.body.description !== "string") ||
+        (req.body.preferredDate !== undefined && typeof req.body.preferredDate !== "string")) {
+      throw new HttpError(400, "Service type, description, and preferred date must be text");
+    }
     const entrepreneurId = req.body.entrepreneurId;
     const serviceType = req.body.serviceType?.trim();
     const description = req.body.description?.trim() || "";
@@ -28,6 +33,9 @@ router.post(
     }
 
     ensureObjectId(entrepreneurId, "entrepreneur id");
+    if (serviceType.length > 100 || description.length > 1000) {
+      throw new HttpError(400, "Service type must be at most 100 characters and description at most 1000");
+    }
 
     if (preferredDate && Number.isNaN(Date.parse(preferredDate))) {
       throw new HttpError(400, "Preferred date is invalid");
@@ -83,7 +91,7 @@ router.patch(
   protect,
   requireRole("entrepreneur"),
   asyncHandler(async (req, res) => {
-    const { status } = req.body;
+    const { status } = req.body || {};
     const allowedTransitions = {
       pending: ["accepted", "rejected"],
       accepted: ["completed"],
@@ -113,7 +121,8 @@ router.patch(
       throw new HttpError(400, `Cannot change request from ${request.status} to ${status}`);
     }
 
-    const updated = await ServiceRequest.updateStatus(req.params.id, status);
+    const updated = await ServiceRequest.updateStatus(req.params.id, status, request.status);
+    if (!updated) throw new HttpError(409, "Request changed. Refresh and try again.");
 
     return res.json({ message: `Request ${status}`, request: updated });
   })
@@ -139,7 +148,8 @@ router.patch(
       throw new HttpError(400, "Only pending requests can be cancelled");
     }
 
-    const updated = await ServiceRequest.updateStatus(req.params.id, "cancelled");
+    const updated = await ServiceRequest.updateStatus(req.params.id, "cancelled", "pending");
+    if (!updated) throw new HttpError(409, "Request changed. Refresh and try again.");
 
     return res.json({ message: "Request cancelled", request: updated });
   })

@@ -7,7 +7,7 @@ const emptyForm = {
   preferredDate: "",
 };
 
-export default function RequestModal({ open, onClose, onSubmit, entrepreneur, submitting }) {
+export default function RequestModal({ open, onClose, onSubmit, entrepreneur, submitting, error }) {
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
@@ -18,12 +18,12 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
     if (!open) return undefined;
 
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !submitting) onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, submitting]);
 
   if (!open) return null;
 
@@ -42,7 +42,7 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
   };
 
   return (
-    <div className="modalBackdrop" onClick={onClose}>
+    <div className="modalBackdrop" onClick={() => !submitting && onClose()}>
       <section
         className="modalPanel"
         role="dialog"
@@ -60,12 +60,14 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
           </p>
         </div>
 
+        {error && <div role="alert" className="notice noticeError">{error}</div>}
         <form onSubmit={submit} className="formStack">
           <label className="field">
             <span className="label">Service type</span>
             <input
               className="input"
               name="serviceType"
+              maxLength={100}
               placeholder="Stitching, repair, pottery..."
               value={form.serviceType}
               onChange={handleChange}
@@ -78,6 +80,7 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
             <textarea
               className="input textarea"
               name="description"
+              maxLength={1000}
               placeholder="Describe the work, quantity, size, or delivery needs"
               value={form.description}
               onChange={handleChange}
@@ -98,7 +101,7 @@ export default function RequestModal({ open, onClose, onSubmit, entrepreneur, su
           </label>
 
           <div className="buttonRow">
-            <button type="button" className="btn btnGhost" onClick={onClose}>
+            <button type="button" className="btn btnGhost" onClick={onClose} disabled={submitting}>
               Cancel
             </button>
             <button type="submit" className="btn btnPrimary" disabled={submitting}>

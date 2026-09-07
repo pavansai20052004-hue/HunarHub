@@ -36,7 +36,7 @@ export default function Register() {
       saveSession({ token: data.token, user: data.user });
       navigate(getDashboardPath(data.user.role), { replace: true });
     } catch (err) {
-      setError(err.userMessage || err?.response?.data?.message || "Registration failed. Please try again.");
+      setError(err.userMessage || err?.response?.data?.message || err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,8 @@ export default function Register() {
             <h2>Start with the right role</h2>
           </div>
 
-          {error && <div className="notice noticeError">{error}</div>}
+          {error && <div role="alert" className="notice noticeError">{error}</div>}
+          {loading && <p role="status">Creating your account. The server may take up to a minute to wake up.</p>}
 
           <form onSubmit={handleSubmit} className="formStack">
             <label className="field">
@@ -65,6 +66,7 @@ export default function Register() {
               <input
                 className="input"
                 name="name"
+                minLength={2}
                 placeholder="Your name"
                 value={form.name}
                 onChange={handleChange}

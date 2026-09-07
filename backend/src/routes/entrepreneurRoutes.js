@@ -22,6 +22,9 @@ router.post(
   protect,
   requireRole("entrepreneur"),
   asyncHandler(async (req, res) => {
+    if (!req.body || (req.body.bio !== undefined && typeof req.body.bio !== "string")) {
+      throw new HttpError(400, "Profile details must contain a text bio");
+    }
     const payload = {
       category: req.body.category,
       bio: req.body.bio?.trim() || "",
@@ -32,6 +35,9 @@ router.post(
 
     if (!categories.includes(payload.category)) {
       throw new HttpError(400, "Invalid category");
+    }
+    if (payload.bio.length > 500 || !Number.isInteger(payload.experienceYears)) {
+      throw new HttpError(400, "Bio must be at most 500 characters and experience must be whole years");
     }
 
     if (payload.maxPrice < payload.minPrice) {

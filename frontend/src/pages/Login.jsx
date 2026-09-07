@@ -28,7 +28,7 @@ export default function Login() {
       saveSession({ token: data.token, user: data.user });
       navigate(getDashboardPath(data.user.role), { replace: true });
     } catch (err) {
-      setError(err.userMessage || err?.response?.data?.message || "Login failed. Please try again.");
+      setError(err.userMessage || err?.response?.data?.message || err.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,8 @@ export default function Login() {
             <h2>Access your workspace</h2>
           </div>
 
-          {error && <div className="notice noticeError">{error}</div>}
+          {error && <div role="alert" className="notice noticeError">{error}</div>}
+          {loading && <p role="status">Signing in. The server may take up to a minute to wake up.</p>}
 
           <form onSubmit={handleSubmit} className="formStack">
             <label className="field">

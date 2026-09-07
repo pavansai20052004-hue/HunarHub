@@ -4,7 +4,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { config, isProduction } from "./config/env.js";
-import { getDbState } from "./config/db.js";
+import { checkDbHealth } from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { requestContext } from "./middleware/requestContext.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -66,13 +66,12 @@ app.get("/", (_req, res) =>
   })
 );
 
-app.get("/health", (_req, res) => {
-  const dbState = getDbState();
-  const healthy = dbState === "connected";
+app.get("/health", async (_req, res) => {
+  const healthy = await checkDbHealth();
 
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "ok" : "degraded",
-    database: dbState,
+    database: healthy ? "connected" : "disconnected",
     uptimeSeconds: Math.round(process.uptime()),
     environment: isProduction ? "production" : config.env,
   });

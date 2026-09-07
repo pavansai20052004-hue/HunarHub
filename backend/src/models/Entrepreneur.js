@@ -1,142 +1,59 @@
-import { query } from "../config/db.js";
+import EntrepreneurModel from "./schemas/Entrepreneur.js";
+import UserModel from "./schemas/User.js";
+import { plain } from "./plain.js";
 
-const toNumber = (value) => (value === null || value === undefined ? value : Number(value));
+const userPopulate = { path: "user", select: "name email role location" };
+const escapeRegex = (value) => value.replace(/[.*+?^$(){}|[\]\\]/g, "\\$&");
 
-const mapUser = (row) =>
-  row?.user_id
-    ? {
-        _id: row.user_id,
-        id: row.user_id,
-        name: row.user_name,
-        email: row.user_email,
-        role: row.user_role,
-        location: row.user_location,
-      }
-    : undefined;
-
-const mapEntrepreneur = (row) =>
-  row
-    ? {
-        _id: row.id,
-        id: row.id,
-        user: mapUser(row) || row.user_id,
-        category: row.category,
-        bio: row.bio,
-        experienceYears: row.experience_years,
-        minPrice: toNumber(row.min_price),
-        maxPrice: toNumber(row.max_price),
-        isApproved: row.is_approved,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }
-    : null;
-
-const baseSelect = `
-  SELECT
-    e.*,
-    u.id AS user_id,
-    u.name AS user_name,
-    u.email AS user_email,
-    u.role AS user_role,
-    u.location AS user_location
-  FROM entrepreneurs e
-  JOIN users u ON u.id = e.user_id
-`;
-
-const Entrepreneur = {
+export default {
   async upsertForUser(userId, payload) {
-    const { rows } = await query(
-      `INSERT INTO entrepreneurs (user_id, category, bio, experience_years, min_price, max_price, is_approved)
-       VALUES ($1, $2, $3, $4, $5, $6, false)
-       ON CONFLICT (user_id)
-       DO UPDATE SET
-         category = EXCLUDED.category,
-         bio = EXCLUDED.bio,
-         experience_years = EXCLUDED.experience_years,
-         min_price = EXCLUDED.min_price,
-         max_price = EXCLUDED.max_price
-       RETURNING *`,
-      [
-        userId,
-        payload.category,
-        payload.bio,
-        payload.experienceYears,
-        payload.minPrice,
-        payload.maxPrice,
-      ]
+    return plain(
+      await EntrepreneurModel.findOneAndUpdate(
+        { user: userId },
+        { $set: payload, $setOnInsert: { isApproved: false } },
+        { upsert: true, returnDocument: "after", runValidators: true }
+      ).populate(userPopulate)
     );
-
-    return this.findById(rows[0].id);
   },
-
   async findByUserId(userId) {
-    const { rows } = await query(`${baseSelect} WHERE e.user_id = $1 LIMIT 1`, [userId]);
-    return mapEntrepreneur(rows[0]);
+    return plain(await EntrepreneurModel.findOne({ user: userId }).populate(userPopulate));
   },
-
   async findById(id) {
-    const { rows } = await query(`${baseSelect} WHERE e.id = $1 LIMIT 1`, [id]);
-    return mapEntrepreneur(rows[0]);
+    return plain(await EntrepreneurModel.findById(id).populate(userPopulate));
   },
-
-  async listApproved({ category, minPrice, maxPrice, location }) {
-    const clauses = ["e.is_approved = true"];
-    const values = [];
-
-    if (category) {
-      values.push(category);
-      clauses.push(`e.category = $${values.length}`);
-    }
-
-    if (minPrice !== undefined) {
-      values.push(minPrice);
-      clauses.push(`e.max_price >= $${values.length}`);
-    }
-
-    if (maxPrice !== undefined) {
-      values.push(maxPrice);
-      clauses.push(`e.min_price <= $${values.length}`);
-    }
-
+  async listApproved({ category, minPrice, maxPrice, location } = {}) {
+    const filters = { isApproved: true };
+    if (category) filters.category = category;
+    if (minPrice !== undefined) filters.maxPrice = { $gte: minPrice };
+    if (maxPrice !== undefined) filters.minPrice = { $lte: maxPrice };
     if (location) {
-      values.push(`%${location.toLowerCase()}%`);
-      clauses.push(`lower(u.location) LIKE $${values.length}`);
+      const users = await UserModel.find({
+        location: { $regex: escapeRegex(location), $options: "i" },
+      }).select("_id");
+      filters.user = { $in: users.map((user) => user._id) };
     }
-
-    const { rows } = await query(
-      `${baseSelect}
-       WHERE ${clauses.join(" AND ")}
-       ORDER BY e.updated_at DESC
-       LIMIT 100`,
-      values
+    return plain(
+      await EntrepreneurModel.find(filters)
+        .populate(userPopulate)
+        .sort({ updatedAt: -1 })
+        .limit(100)
     );
-
-    return rows.map(mapEntrepreneur);
   },
-
   async listPending() {
-    const { rows } = await query(
-      `${baseSelect}
-       WHERE e.is_approved = false
-       ORDER BY e.created_at ASC
-       LIMIT 100`
+    return plain(
+      await EntrepreneurModel.find({ isApproved: false })
+        .populate(userPopulate)
+        .sort({ createdAt: 1 })
+        .limit(100)
     );
-
-    return rows.map(mapEntrepreneur);
   },
-
   async approve(id) {
-    const { rows } = await query(
-      `UPDATE entrepreneurs
-       SET is_approved = true
-       WHERE id = $1
-       RETURNING *`,
-      [id]
+    return plain(
+      await EntrepreneurModel.findByIdAndUpdate(
+        id,
+        { $set: { isApproved: true } },
+        { returnDocument: "after", runValidators: true }
+      ).populate(userPopulate)
     );
-
-    if (!rows[0]) return null;
-    return this.findById(rows[0].id);
   },
 };
-
-export default Entrepreneur;
